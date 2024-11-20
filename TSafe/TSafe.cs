@@ -1,27 +1,27 @@
-﻿using SDG.Unturned;
+﻿using System;
+using SDG.Unturned;
 using System.Collections.Generic;
-using Tavstal.TExample.Handlers;
-using Tavstal.TExample.Hooks;
-using Tavstal.TExample.Managers;
+using Tavstal.TSafe.Handlers;
+using Tavstal.TSafe.Managers;
 using Tavstal.TLibrary.Models.Plugin;
-using Tavstal.TLibrary.Models.Hooks;
-using Tavstal.TLibrary.Managers;
 
-namespace Tavstal.TExample
+namespace Tavstal.TSafe
 {
     /// <summary>
     /// The main plugin class.
     /// </summary>
-    public class ExampleMain : PluginBase<ExampleConfig>
+    // ReSharper disable once InconsistentNaming
+    public class TSafe : PluginBase<TSafeConfig>
     {
-        public static ExampleMain Instance { get; private set; }
-        public new static readonly TLogger Logger = new TLogger("TExample", false);
+        public static TSafe Instance { get; private set; }
+        public new static readonly TLogger Logger = new TLogger("TSafe", false);
         public static DatabaseManager DatabaseManager { get; private set; }
         /// <summary>
         /// Used to prevent error spamming that is related to database configuration.
         /// </summary>
         public static bool IsConnectionAuthFailed { get; set; }
-        public static IEconomyProvider EconomyProvider { get; private set; }
+
+        private int _time = 0;
 
         /// <summary>
         /// Fired when the plugin is loaded.
@@ -34,12 +34,17 @@ namespace Tavstal.TExample
             // Attach player related events
             PlayerEventHandler.AttachEvents();
 
+            Logger.LogWarning("████████╗███████╗ █████╗ ███████╗███████╗");
+            Logger.LogWarning("╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔════╝");
+            Logger.LogWarning("   ██║   ███████╗███████║█████╗  █████╗  ");
+            Logger.LogWarning("   ██║   ╚════██║██╔══██║██╔══╝  ██╔══╝  ");
+            Logger.LogWarning("   ██║   ███████║██║  ██║██║     ███████╗");
+            Logger.LogWarning("   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝");
             Logger.Log("#########################################");
             Logger.Log("# Thanks for using my plugin");
-            Logger.Log($"# Plugin Created By Tavstal");
-            Logger.Log("# Discord: @YourDiscordName");
-            Logger.Log("# Website: https://your.website.example");
-            Logger.Log("# Discord Guild: https://discord.gg/your_invite");
+            Logger.Log("# Plugin Created By Tavstal");
+            Logger.Log("# Discord: Tavstal");
+            Logger.Log("# Website: https://redstoneplugins.com");
             // Please do not remove this region and its code, because the license require credits to the author.
             #region Credits to Tavstal
             Logger.Log("#########################################");
@@ -67,6 +72,12 @@ namespace Tavstal.TExample
             Level.onPostLevelLoaded -= Event_OnPluginsLoaded;
             PlayerEventHandler.DetachEvents();
             Logger.Log($"# {GetPluginName()} has been successfully unloaded.");
+
+            foreach (var vault in VaultManager.VaultList)
+            {
+                VaultManager.PreventVaultDestroy(vault.Key);
+                VaultManager.DestroyVaultNoQueue(vault.Key);
+            }
         }
 
         private void Event_OnPluginsLoaded(int i)
@@ -77,29 +88,22 @@ namespace Tavstal.TExample
                 this?.UnloadPlugin();
                 return;
             }
-
-            Logger.LogLateInit();
-            Logger.LogWarning("# Searching for economy plugin...");
-            // Create HookManager and load all hooks
-            HookManager = new HookManager(this);
-            HookManager.LoadAll(Assembly);
-
-            if (!HookManager.IsHookLoadable<UconomyHook>())
-            {
-                Logger.LogError($"# Failed to load economy hook. Unloading {GetPluginName()}...");
-                this?.UnloadPlugin();
-                return;
-            }
-            EconomyProvider = HookManager.GetHook<UconomyHook>();
         }
 
+        private void Update()
+        {
+            _time++;
+            if (_time % 60 == 0)
+                return;
+            
+            VaultManager.Update();
+        }
 
         public override Dictionary<string, string> DefaultLocalization =>
            new Dictionary<string, string>
            {
                { "prefix", $"&e[{GetPluginName()}]" },
                { "error_player_not_found", "&cPlayer was not found." },
-               { "success_command_example_hi_sent", "&aThe message has been successfully sent to the player." }
            };
     }
 }
