@@ -1,22 +1,20 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
 using SDG.Unturned;
-using Tavstal.TLibrary.Models.Database;
-using Tavstal.TLibrary.Models.Plugin;
 using Tavstal.TLibrary.Extensions;
 using Tavstal.TLibrary.Helpers.General;
 using Tavstal.TLibrary.Managers;
+using Tavstal.TLibrary.Models.Database;
+using Tavstal.TLibrary.Models.Plugin;
 using Tavstal.TSafe.Models;
 
-namespace Tavstal.TSafe.Managers
+namespace Tavstal.TSafe.Utils.Managers
 {
     public class DatabaseManager : DatabaseManagerBase
     {
-#pragma warning disable IDE1006 //
         private static TSafeConfig PluginConfig => TSafe.Instance.Config;
-#pragma warning restore IDE1006 //
 
         public DatabaseManager(IPlugin plugin, IConfigurationBase config) : base(plugin, config)
         {

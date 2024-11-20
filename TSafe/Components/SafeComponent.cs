@@ -1,6 +1,4 @@
-using System;
 using Rocket.Unturned.Player;
-using Tavstal.TSafe.Models;
 
 namespace Tavstal.TSafe.Components
 {

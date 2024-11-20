@@ -6,8 +6,8 @@ using Rocket.Unturned.Player;
 using Tavstal.TLibrary.Helpers.Unturned;
 using Tavstal.TLibrary.Models.Commands;
 using Tavstal.TLibrary.Models.Plugin;
-using Tavstal.TSafe.Managers;
 using Tavstal.TSafe.Models;
+using Tavstal.TSafe.Utils.Managers;
 
 namespace Tavstal.TSafe.Commands
 {
