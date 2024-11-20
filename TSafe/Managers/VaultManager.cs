@@ -132,12 +132,20 @@ namespace Tavstal.TSafe.Managers
 
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
-                    BarricadeData barricadeData = vaultStorage.StorageDrop.GetServersideData();
-                    InteractableStorage interactableStorage =
-                        (InteractableStorage)vaultStorage.StorageDrop.interactable;
-                    interactableStorage.items.clear();
-                    barricadeData.barricade.askDamage(ushort.MaxValue);
-                    _vaultList.Remove(vaultId);
+                    try
+                    {
+                        BarricadeData barricadeData = vaultStorage.StorageDrop.GetServersideData();
+                        InteractableStorage interactableStorage =
+                            (InteractableStorage)vaultStorage.StorageDrop.interactable;
+                        interactableStorage.items.clear();
+                        barricadeData.barricade.askDamage(ushort.MaxValue);
+                        _vaultList.Remove(vaultId);
+                    }
+                    catch (Exception ex)
+                    {
+                        TSafe.Logger.LogException("Error in DestroyVault game thread:");
+                        TSafe.Logger.LogError(ex);
+                    }
                 });
             }
             catch (Exception ex)
