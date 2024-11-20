@@ -1,9 +1,10 @@
-﻿using System;
-using SDG.Unturned;
+﻿using SDG.Unturned;
 using System.Collections.Generic;
-using Tavstal.TSafe.Handlers;
-using Tavstal.TSafe.Managers;
+using System.Threading.Tasks;
+using Tavstal.TLibrary;
 using Tavstal.TLibrary.Models.Plugin;
+using Tavstal.TSafe.Utils.Handlers;
+using Tavstal.TSafe.Utils.Managers;
 
 namespace Tavstal.TSafe
 {
@@ -14,6 +15,7 @@ namespace Tavstal.TSafe
     public class TSafe : PluginBase<TSafeConfig>
     {
         public static TSafe Instance { get; private set; }
+        internal static bool IsShuttingDown { get; set; }
         public new static readonly TLogger Logger = new TLogger("TSafe", false);
         public static DatabaseManager DatabaseManager { get; private set; }
         /// <summary>
@@ -73,10 +75,26 @@ namespace Tavstal.TSafe
             PlayerEventHandler.DetachEvents();
             Logger.Log($"# {GetPluginName()} has been successfully unloaded.");
 
-            foreach (var vault in VaultManager.VaultList)
+            try
             {
-                VaultManager.PreventVaultDestroy(vault.Key);
-                VaultManager.DestroyVaultNoQueue(vault.Key);
+                if (IsShuttingDown)
+                    return;
+                
+                foreach (var vault in VaultManager.VaultList)
+                {
+                    VaultManager.PreventVaultDestroy(vault.Key);
+                    InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
+                    Task.Run(async () =>
+                    {
+                        await DatabaseManager.RemoveVaultItemsAsync(vault.Key);
+                        await DatabaseManager.AddVaultItemAsync(vault.Key, storage.items.items);
+                        VaultManager.DestroyVaultNoQueue(vault.Key);
+                    });
+                }
+            }
+            catch
+            {
+                /* Ignore, shutdown might provide some errors */
             }
         }
 
@@ -90,13 +108,28 @@ namespace Tavstal.TSafe
             }
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             _time++;
-            if (_time % 60 == 0)
+            if (_time % 3000 != 0)
                 return;
             
             VaultManager.Update();
+            
+            if (_time % (Config.Database.SaveInterval * 50) != 0)
+                return;
+            
+            Task.Run(async () =>
+            {
+                foreach (var vault in VaultManager.VaultList)
+                {
+                    VaultManager.PreventVaultDestroy(vault.Key);
+                    InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
+                    await DatabaseManager.RemoveVaultItemsAsync(vault.Key);
+                    await DatabaseManager.AddVaultItemAsync(vault.Key, storage.items.items);
+                    await MainThreadDispatcher.RunOnMainThreadAsync(() => VaultManager.DestroyVaultNoQueue(vault.Key));
+                }
+            });
         }
 
         public override Dictionary<string, string> DefaultLocalization =>
