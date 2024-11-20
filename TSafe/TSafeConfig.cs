@@ -22,7 +22,7 @@ namespace Tavstal.TSafe
             DebugMode = false;
             Locale = "en";
             DownloadLocalePacks = true;
-            Database = new DatabaseData("tsafe_vault", "tsafe_vaultitems");
+            Database = new DatabaseData("tsafe_vault", "tsafe_vaultitems", 300);
             DefaultRowX = 5;
             DefaultRowY = 5;
             Groups = new List<Group>

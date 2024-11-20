@@ -10,11 +10,14 @@ namespace Tavstal.TSafe.Models
         public string VaultTable { get; set; }
         [JsonProperty(Order = 8)]
         public string VaultItemsTable { get; set; }
-
-        public DatabaseData(string vaultTable, string vaultItemsTable)
+        [JsonProperty(Order = 9)]
+        public int SaveInterval { get; set; }
+        
+        public DatabaseData(string vaultTable, string vaultItemsTable, int saveInterval)
         {
             VaultTable = vaultTable;
             VaultItemsTable = vaultItemsTable;
+            SaveInterval = saveInterval;
         }
     }
 }
