@@ -33,31 +33,40 @@ namespace Tavstal.TSafe.Managers
                 
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
-                    ItemBarricadeAsset barricadeAsset = Assets.find(EAssetType.ITEM, 328) as ItemBarricadeAsset;
-                    Transform transform = BarricadeManager.dropBarricade(new Barricade(barricadeAsset), null, new Vector3(0, -100, 0), 0, 0, 0, player.CSteamID.m_SteamID, 29832);
-                    BarricadeDrop drop = BarricadeManager.FindBarricadeByRootTransform(transform);
-                    if (drop == null)
-                        return;
-
-                    InteractableStorage interactableStorage = (InteractableStorage)drop.interactable;
-                    List<VaultItem> itemsToForceAdd = new List<VaultItem>();
-                    foreach (VaultItem item in vaultItems)
+                    try
                     {
-                        try
+                        ItemBarricadeAsset barricadeAsset = Assets.find(EAssetType.ITEM, 328) as ItemBarricadeAsset;
+                        Transform transform = BarricadeManager.dropBarricade(new Barricade(barricadeAsset), null,
+                            new Vector3(0, -100, 0), 0, 0, 0, player.CSteamID.m_SteamID, 29832);
+                        BarricadeDrop drop = BarricadeManager.FindBarricadeByRootTransform(transform);
+                        if (drop == null)
+                            return;
+
+                        InteractableStorage interactableStorage = (InteractableStorage)drop.interactable;
+                        List<VaultItem> itemsToForceAdd = new List<VaultItem>();
+                        foreach (VaultItem item in vaultItems)
                         {
-                            interactableStorage.items.loadItem(item.X, item.Y, item.Rot, item.ToItem());
+                            try
+                            {
+                                interactableStorage.items.loadItem(item.X, item.Y, item.Rot, item.ToItem());
+                            }
+                            catch
+                            {
+                                itemsToForceAdd.Add(item);
+                            }
                         }
-                        catch
-                        {
-                            itemsToForceAdd.Add(item);
-                        }
+
+                        foreach (VaultItem item in itemsToForceAdd)
+                            interactableStorage.items.tryAddItem(item.ToItem());
+
+                        result = new UnturnedVault(drop, player, vault.SizeX, vault.SizeY);
+                        _vaultList.Add(vaultId, result);
                     }
-
-                    foreach (VaultItem item in itemsToForceAdd)
-                        interactableStorage.items.tryAddItem(item.ToItem());
-
-                    result = new UnturnedVault(drop, player, vault.SizeX, vault.SizeY);
-                    _vaultList.Add(vaultId, result);
+                    catch (Exception ex)
+                    {
+                        TSafe.Logger.LogException("Error in CreateVaultAsync game thread:");
+                        TSafe.Logger.LogError(ex);
+                    }
                 });
             }
             catch (Exception ex)
