@@ -8,7 +8,7 @@ using Tavstal.TSafe.Components;
 using Tavstal.TSafe.Models;
 using UnityEngine;
 
-namespace Tavstal.TSafe.Managers
+namespace Tavstal.TSafe.Utils.Managers
 {
     public static class VaultManager
     {
@@ -30,44 +30,37 @@ namespace Tavstal.TSafe.Managers
                     return null;
                 
                 List<VaultItem> vaultItems = await TSafe.DatabaseManager.GetVaultItemsAsync(vault.Id);
+
+                BarricadeDrop drop = null;
+                await MainThreadDispatcher.RunOnMainThreadAsync(() =>
+                {
+                    ItemBarricadeAsset barricadeAsset = Assets.find(EAssetType.ITEM, 328) as ItemBarricadeAsset;
+                    Transform transform = BarricadeManager.dropBarricade(new Barricade(barricadeAsset), null,
+                        new Vector3(0, -100, 0), 0, 0, 0, player.CSteamID.m_SteamID, 29832);
+                    drop = BarricadeManager.FindBarricadeByRootTransform(transform);
+                });
                 
-                MainThreadDispatcher.RunOnMainThread(() =>
+                if (drop == null)
+                    return null;
+                
+                InteractableStorage interactableStorage = (InteractableStorage)drop.interactable;
+                List<VaultItem> itemsToForceAdd = new List<VaultItem>();
+                foreach (VaultItem item in vaultItems)
                 {
                     try
                     {
-                        ItemBarricadeAsset barricadeAsset = Assets.find(EAssetType.ITEM, 328) as ItemBarricadeAsset;
-                        Transform transform = BarricadeManager.dropBarricade(new Barricade(barricadeAsset), null,
-                            new Vector3(0, -100, 0), 0, 0, 0, player.CSteamID.m_SteamID, 29832);
-                        BarricadeDrop drop = BarricadeManager.FindBarricadeByRootTransform(transform);
-                        if (drop == null)
-                            return;
-
-                        InteractableStorage interactableStorage = (InteractableStorage)drop.interactable;
-                        List<VaultItem> itemsToForceAdd = new List<VaultItem>();
-                        foreach (VaultItem item in vaultItems)
-                        {
-                            try
-                            {
-                                interactableStorage.items.loadItem(item.X, item.Y, item.Rot, item.ToItem());
-                            }
-                            catch
-                            {
-                                itemsToForceAdd.Add(item);
-                            }
-                        }
-
-                        foreach (VaultItem item in itemsToForceAdd)
-                            interactableStorage.items.tryAddItem(item.ToItem());
-
-                        result = new UnturnedVault(drop, player, vault.SizeX, vault.SizeY);
-                        _vaultList.Add(vaultId, result);
+                        interactableStorage.items.loadItem(item.X, item.Y, item.Rot, item.ToItem());
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        TSafe.Logger.LogException("Error in CreateVaultAsync game thread:");
-                        TSafe.Logger.LogError(ex);
+                        itemsToForceAdd.Add(item);
                     }
-                });
+                }
+                foreach (VaultItem item in itemsToForceAdd)
+                    interactableStorage.items.tryAddItem(item.ToItem());
+
+                result = new UnturnedVault(drop, player, vault.SizeX, vault.SizeY);
+                _vaultList.Add(vaultId, result);
             }
             catch (Exception ex)
             {
@@ -85,17 +78,23 @@ namespace Tavstal.TSafe.Managers
                 if (!_vaultList.TryGetValue(guid, out UnturnedVault vaultStorage))
                     vaultStorage = await CreateVaultAsync(player, guid);
 
-                InteractableStorage interactableStorage = (InteractableStorage)vaultStorage.StorageDrop.interactable;
-                interactableStorage.items.resize((byte)vaultStorage.SizeX, (byte)vaultStorage.SizeY);
-                interactableStorage.isOpen = true;
-                interactableStorage.opener = player.Player;
-                player.Inventory.isStoring = false;
-                player.Inventory.storage = interactableStorage;
-                player.Inventory.updateItems(PlayerInventory.STORAGE, interactableStorage.items);
-                player.Inventory.sendStorage();
-                var comp = player.GetComponent<SafeComponent>();
-                comp.isSafeOpened = true;
-                comp.VaultId = guid;
+                MainThreadDispatcher.RunOnMainThread(() =>
+                {
+                    InteractableStorage interactableStorage = (InteractableStorage)vaultStorage.StorageDrop.interactable;
+
+                    interactableStorage.items.resize((byte)vaultStorage.SizeX, (byte)vaultStorage.SizeY);
+                    interactableStorage.isOpen = true;
+
+                    interactableStorage.opener = player.Player;
+                    player.Inventory.isStoring = false;
+                    player.Inventory.storage = interactableStorage;
+
+                    player.Inventory.updateItems(PlayerInventory.STORAGE, interactableStorage.items);
+                    player.Inventory.sendStorage();
+                    var comp = player.GetComponent<SafeComponent>();
+                    comp.isSafeOpened = true;
+                    comp.VaultId = guid;
+                });
             }
             catch (Exception ex)
             {
@@ -167,7 +166,14 @@ namespace Tavstal.TSafe.Managers
                     continue;
                 
                 toRemove.Add(elem.Key);
-                DestroyVault(elem.Key);
+                Task.Run(async () =>
+                {
+                    UnturnedVault vault = _vaultList[elem.Key];
+                    InteractableStorage storage = (InteractableStorage)vault.StorageDrop.interactable;
+                    await TSafe.DatabaseManager.RemoveVaultItemsAsync(elem.Key);
+                    await TSafe.DatabaseManager.AddVaultItemAsync(elem.Key, storage.items.items);
+                    await MainThreadDispatcher.RunOnMainThreadAsync(() => DestroyVault(elem.Key));
+                });
             }
 
             foreach (var elem in toRemove)
