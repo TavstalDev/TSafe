@@ -16,7 +16,7 @@ namespace Tavstal.TSafe.Commands
         protected override IPlugin Plugin => TSafe.Instance; 
         public override AllowedCaller AllowedCaller => AllowedCaller.Player;
         public override string Name => "safe";
-        public override string Help => "";
+        public override string Help => "Manages the player's virtual storage.";
         public override string Syntax => "open | clear";
         public override List<string> Aliases => new List<string>() { "locker", "storage", "enderchest", "ec" };
         public override List<string> Permissions => new List<string> { "tsafe.command.safe" };
@@ -49,9 +49,11 @@ namespace Tavstal.TSafe.Commands
                         string guid = Guid.NewGuid().ToString();
                         await TSafe.DatabaseManager.AddVaultAsync(guid, callerPlayer.CharacterName, callerPlayer.CSteamID.m_SteamID, x, y);
                         await VaultManager.OpenVaultAsync(callerPlayer, guid);
+                        TSafe.Instance.SendCommandReply(caller, "success_command_safe_open");
                         return;
                     }
                     await VaultManager.OpenVaultAsync(callerPlayer, vault.Id);
+                    TSafe.Instance.SendCommandReply(caller, "success_command_safe_open");
                 }),
             new SubCommand("clear", "Clears the virtual storage.", "clear", new List<string>() { "empty" }, new List<string>() { "tsafe.command.safe.clear" }, 
                 async (caller,  args) =>
