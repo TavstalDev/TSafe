@@ -137,6 +137,8 @@ namespace Tavstal.TSafe
            {
                { "prefix", $"&e[{GetPluginName()}]" },
                { "error_player_not_found", "&cPlayer was not found." },
+               { "success_command_safe_open", "&aYou have successfully opened your safe." },
+               { "success_command_safe_clear", "&aYou have successfully cleared your safe." }
            };
     }
 }
