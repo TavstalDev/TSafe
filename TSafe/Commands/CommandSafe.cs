@@ -83,6 +83,7 @@ namespace Tavstal.TSafe.Commands
                     }
 
                     await TSafe.DatabaseManager.RemoveVaultItemsAsync(vault.Id);
+                    VaultManager.DestroyVaultNoQueue(vault.Id);
                     TSafe.Instance.SendCommandReply(caller, "success_command_safe_clear");
                 }),
         };
