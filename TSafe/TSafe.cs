@@ -137,8 +137,12 @@ namespace Tavstal.TSafe
            {
                { "prefix", $"&e[{GetPluginName()}]" },
                { "error_player_not_found", "&cPlayer was not found." },
+               { "error_vault_not_found", "&e{0}&c has no vault." },
+               { "error_invalid_item", "&cInvalid item id." },
                { "success_command_safe_open", "&aYou have successfully opened your safe." },
-               { "success_command_safe_clear", "&aYou have successfully cleared your safe." }
+               { "success_command_safe_clear", "&aYou have successfully cleared your safe." },
+               { "success_command_safeadmin_clear", "&aYou have successfully clear the safe." },
+               { "success_command_safeadmin_clearall", "&aYou have successfully cleared all safes." },
            };
     }
 }
