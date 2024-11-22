@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Rocket.Unturned.Player;
 using SDG.Unturned;
 using Tavstal.TLibrary;
-using Tavstal.TSafe.Components;
 using Tavstal.TSafe.Models;
 using UnityEngine;
 
@@ -19,7 +18,7 @@ namespace Tavstal.TSafe.Utils.Managers
         // ReSharper disable once InconsistentNaming
         private static readonly Dictionary<string, DateTime> _destroyQueue = new Dictionary<string, DateTime>();
 
-        private static async Task<UnturnedVault> CreateVaultAsync(UnturnedPlayer player, string vaultId)
+        private static async Task<UnturnedVault> CreateVaultAsync(string vaultId)
         {
             UnturnedVault result = null;
 
@@ -36,7 +35,7 @@ namespace Tavstal.TSafe.Utils.Managers
                 {
                     ItemBarricadeAsset barricadeAsset = Assets.find(EAssetType.ITEM, 328) as ItemBarricadeAsset;
                     Transform transform = BarricadeManager.dropBarricade(new Barricade(barricadeAsset), null,
-                        new Vector3(0, -100, 0), 0, 0, 0, player.CSteamID.m_SteamID, 29832);
+                        new Vector3(0, -100, 0), 0, 0, 0, vault.OwnerId, 29832);
                     drop = BarricadeManager.FindBarricadeByRootTransform(transform);
                 });
                 
@@ -59,7 +58,7 @@ namespace Tavstal.TSafe.Utils.Managers
                 foreach (VaultItem item in itemsToForceAdd)
                     interactableStorage.items.tryAddItem(item.ToItem());
 
-                result = new UnturnedVault(drop, player, vault.SizeX, vault.SizeY);
+                result = new UnturnedVault(drop, vault.SizeX, vault.SizeY);
                 _vaultList.Add(vaultId, result);
             }
             catch (Exception ex)
@@ -76,7 +75,7 @@ namespace Tavstal.TSafe.Utils.Managers
             try
             {
                 if (!_vaultList.TryGetValue(guid, out UnturnedVault vaultStorage))
-                    vaultStorage = await CreateVaultAsync(player, guid);
+                    vaultStorage = await CreateVaultAsync(guid);
 
                 MainThreadDispatcher.RunOnMainThread(() =>
                 {
@@ -91,9 +90,6 @@ namespace Tavstal.TSafe.Utils.Managers
 
                     player.Inventory.updateItems(PlayerInventory.STORAGE, interactableStorage.items);
                     player.Inventory.sendStorage();
-                    var comp = player.GetComponent<SafeComponent>();
-                    comp.isSafeOpened = true;
-                    comp.VaultId = guid;
                 });
             }
             catch (Exception ex)
