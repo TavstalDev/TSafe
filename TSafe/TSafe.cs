@@ -23,7 +23,7 @@ namespace Tavstal.TSafe
         /// </summary>
         public static bool IsConnectionAuthFailed { get; set; }
 
-        private int _time = 0;
+        private int _time;
 
         /// <summary>
         /// Fired when the plugin is loaded.
@@ -103,8 +103,7 @@ namespace Tavstal.TSafe
             if (IsConnectionAuthFailed)
             {
                 Logger.LogWarning($"# Unloading {GetPluginName()} due to database authentication error.");
-                this?.UnloadPlugin();
-                return;
+                this.UnloadPlugin();
             }
         }
 

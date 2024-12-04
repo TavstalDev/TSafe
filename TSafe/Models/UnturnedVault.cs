@@ -1,4 +1,3 @@
-using Rocket.Unturned.Player;
 using SDG.Unturned;
 
 namespace Tavstal.TSafe.Models

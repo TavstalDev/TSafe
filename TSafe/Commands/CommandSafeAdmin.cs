@@ -99,7 +99,6 @@ namespace Tavstal.TSafe.Commands
             new SubCommand("clearall", "Clears every unit of a specific item from all virtual storage.", "clearall <item>", new List<string>() { "emptyall" }, new List<string>() { "tsafe.command.safeadmin.clearall" }, 
                 async (caller,  args) =>
                 {
-                    UnturnedPlayer callerPlayer = (UnturnedPlayer)caller;
                     if (args.Length > 1)
                     {
                         await ExecuteHelp(caller, false, "clearall", args);
