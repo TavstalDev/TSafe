@@ -9,6 +9,12 @@ using UnityEngine;
 
 namespace Tavstal.TSafe.Utils.Managers
 {
+    /// <summary>
+    /// A static class responsible for managing vault-related operations within the game.
+    /// </summary>
+    /// <remarks>
+    /// This class handles the creation, retrieval, updating, and deletion of vaults in the system. It also provides utilities for interacting with vault data and performing necessary actions on them.
+    /// </remarks>
     public static class VaultManager
     {
         // ReSharper disable once InconsistentNaming
@@ -18,6 +24,16 @@ namespace Tavstal.TSafe.Utils.Managers
         // ReSharper disable once InconsistentNaming
         private static readonly Dictionary<string, DateTime> _destroyQueue = new Dictionary<string, DateTime>();
 
+        /// <summary>
+        /// Creates a new vault asynchronously.
+        /// </summary>
+        /// <param name="vaultId">The unique identifier for the vault to be created.</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation, containing the created <see cref="UnturnedVault"/> object.
+        /// </returns>
+        /// <remarks>
+        /// This method asynchronously creates a vault with the specified <paramref name="vaultId"/>. It initializes the vault and prepares it for use in the game.
+        /// </remarks>
         private static async Task<UnturnedVault> CreateVaultAsync(string vaultId)
         {
             UnturnedVault result = null;
@@ -70,6 +86,18 @@ namespace Tavstal.TSafe.Utils.Managers
             return result;
         }
         
+        /// <summary>
+        /// Opens a vault for the specified player asynchronously.
+        /// </summary>
+        /// <param name="player">The player requesting to open the vault.</param>
+        /// <param name="guid">The unique identifier (GUID) of the vault to be opened.</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation of opening the vault.
+        /// </returns>
+        /// <remarks>
+        /// This method asynchronously handles the process of opening the vault specified by <paramref name="guid"/> for the given <paramref name="player"/>. 
+        /// It allows the player to interact with the vault's contents once the operation is complete.
+        /// </remarks>
         public static async Task OpenVaultAsync(UnturnedPlayer player, string guid)
         {
             try
@@ -99,6 +127,14 @@ namespace Tavstal.TSafe.Utils.Managers
             }
         }
 
+        /// <summary>
+        /// Requests the destruction of a vault with the specified ID.
+        /// </summary>
+        /// <param name="vaultId">The unique identifier (ID) of the vault to be destroyed.</param>
+        /// <remarks>
+        /// This method initiates the process of destroying the vault identified by <paramref name="vaultId"/>. 
+        /// The vault will be permanently removed from the game map.
+        /// </remarks>
         public static void RequestVaultDestroy(string vaultId)
         {
             if (_destroyQueue.ContainsKey(vaultId))
@@ -107,17 +143,40 @@ namespace Tavstal.TSafe.Utils.Managers
             _destroyQueue.Add(vaultId, DateTime.Now.AddMinutes(5));
         }
 
-        public static void PreventVaultDestroy(string vaultId)
+        /// <summary>
+        /// Cancels a pending request to destroy a vault with the specified ID.
+        /// </summary>
+        /// <param name="vaultId">The unique identifier (ID) of the vault for which the destruction request should be canceled.</param>
+        /// <remarks>
+        /// This method cancels any ongoing or pending destruction request for the vault identified by <paramref name="vaultId"/>. 
+        /// The vault will not be destroyed if this method is called before the destruction is finalized.
+        /// </remarks>
+        public static void CancelVaultDestroy(string vaultId)
         {
             if (_destroyQueue.ContainsKey(vaultId))
                 _destroyQueue.Remove(vaultId);
         }
 
+        /// <summary>
+        /// Immediately destroys the vault with the specified ID without queuing the operation.
+        /// </summary>
+        /// <param name="vaultId">The unique identifier (ID) of the vault to be destroyed.</param>
+        /// <remarks>
+        /// This method performs an immediate destruction of the vault identified by <paramref name="vaultId"/> without waiting for any pending operations. 
+        /// The vault and any associated data will be permanently removed from the game map without being queued for processing.
+        /// </remarks>
         public static void DestroyVaultNoQueue(string vaultId)
         {
             DestroyVault(vaultId);
         }
         
+        /// <summary>
+        /// Destroys the vault with the specified ID.
+        /// </summary>
+        /// <param name="vaultId">The unique identifier (ID) of the vault to be destroyed.</param>
+        /// <remarks>
+        /// This method performs the destruction of the vault identified by <paramref name="vaultId"/>.
+        /// </remarks>
         private static void DestroyVault(string vaultId)
         {
             try
@@ -150,6 +209,13 @@ namespace Tavstal.TSafe.Utils.Managers
             }
         }
 
+        /// <summary>
+        /// Performs the update logic for the system or component on each frame.
+        /// </summary>
+        /// <remarks>
+        /// This method is called periodically to execute the update logic. 
+        /// It should be called during each frame or cycle of the application.
+        /// </remarks>
         internal static void Update()
         {
             if (_destroyQueue.Count < 1)

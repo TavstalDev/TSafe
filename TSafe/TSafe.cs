@@ -82,7 +82,7 @@ namespace Tavstal.TSafe
                 
                 foreach (var vault in VaultManager.VaultList)
                 {
-                    VaultManager.PreventVaultDestroy(vault.Key);
+                    VaultManager.CancelVaultDestroy(vault.Key);
                     InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
                     Task.Run(async () =>
                     {
@@ -122,7 +122,7 @@ namespace Tavstal.TSafe
             {
                 foreach (var vault in VaultManager.VaultList)
                 {
-                    VaultManager.PreventVaultDestroy(vault.Key);
+                    VaultManager.CancelVaultDestroy(vault.Key);
                     InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
                     await DatabaseManager.RemoveVaultItemsAsync(vault.Key);
                     await DatabaseManager.AddVaultItemAsync(vault.Key, storage.items.items);
