@@ -16,7 +16,6 @@ namespace Tavstal.TSafe
     {
         public static TSafe Instance { get; private set; }
         internal static bool IsShuttingDown { get; set; }
-        public new static readonly TLogger Logger = new TLogger("TSafe", false);
         public static DatabaseManager DatabaseManager { get; private set; }
         /// <summary>
         /// Used to prevent error spamming that is related to database configuration.
