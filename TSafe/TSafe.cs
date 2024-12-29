@@ -110,11 +110,14 @@ namespace Tavstal.TSafe
         private void FixedUpdate()
         {
             _time++;
+            // Every second
             if (_time % 3000 != 0)
                 return;
             
             VaultManager.Update();
             
+            // (Default SaveInterval is 300)
+            // Executes the code every 300 seconds (5 minutes)
             if (_time % (Config.Database.SaveInterval * 50) != 0)
                 return;
             
