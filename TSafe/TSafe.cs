@@ -1,4 +1,5 @@
-﻿using SDG.Unturned;
+﻿using System;
+using SDG.Unturned;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tavstal.TLibrary;
@@ -35,28 +36,27 @@ namespace Tavstal.TSafe
             // Attach player related events
             PlayerEventHandler.AttachEvents();
 
-            Logger.LogWarning("████████╗███████╗ █████╗ ███████╗███████╗");
-            Logger.LogWarning("╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔════╝");
-            Logger.LogWarning("   ██║   ███████╗███████║█████╗  █████╗  ");
-            Logger.LogWarning("   ██║   ╚════██║██╔══██║██╔══╝  ██╔══╝  ");
-            Logger.LogWarning("   ██║   ███████║██║  ██║██║     ███████╗");
-            Logger.LogWarning("   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝");
-            Logger.Log("#########################################");
-            Logger.Log("# Thanks for using my plugin");
-            Logger.Log("# Plugin Created By Tavstal");
-            Logger.Log("# Discord: Tavstal");
-            Logger.Log("# Website: https://redstoneplugins.com");
-            // Please do not remove this region and its code, because the license require credits to the author.
-            #region Credits to Tavstal
-            Logger.Log("#########################################");
-            Logger.Log($"# This plugin uses TLibrary.");
-            Logger.Log($"# TLibrary Created By: Tavstal"); 
-            Logger.Log($"# Github: https://github.com/TavstalDev/TLibrary/tree/master");
-            #endregion
-            Logger.Log("#########################################");
-            Logger.Log($"# Build Version: {Version}");
-            Logger.Log($"# Build Date: {BuildDate}");
-            Logger.Log("#########################################");
+            Logger.Log("████████╗███████╗ █████╗ ███████╗███████╗", ConsoleColor.Cyan, prefix: null);
+            Logger.Log("╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔════╝", ConsoleColor.Cyan, prefix: null);
+            Logger.Log("   ██║   ███████╗███████║█████╗  █████╗  ", ConsoleColor.Cyan, prefix: null);
+            Logger.Log("   ██║   ╚════██║██╔══██║██╔══╝  ██╔══╝  ", ConsoleColor.Cyan, prefix: null);
+            Logger.Log("   ██║   ███████║██║  ██║██║     ███████╗", ConsoleColor.Cyan, prefix: null);
+            Logger.Log("   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝", ConsoleColor.Cyan, prefix: null);
+            Logger.Log("#########################################", prefix: null);
+            Logger.Log("#       Thanks for using this plugin!   #", prefix: null);
+            Logger.Log("#########################################", prefix: null);
+            Logger.Log("# Developed By: Tavstal", prefix: null);
+            Logger.Log("# Discord:      @Tavstal", prefix: null);
+            Logger.Log("# Website:      https://redstoneplugins.com", prefix: null);
+            Logger.Log("# My GitHub:    https://tavstaldev.github.io", prefix: null);
+            Logger.Log("#########################################", prefix: null);
+            Logger.Log($"# Plugin Version:    {Version}", prefix: null);
+            Logger.Log($"# Build Date:        {BuildDate}", prefix: null);
+            Logger.Log($"# TLibrary Version:  {LibraryVersion}", prefix: null);
+            Logger.Log("#########################################", prefix: null);
+            Logger.Log("# Found an issue or have a suggestion?", prefix: null);
+            Logger.Log("# Report it here: https://github.com/TavstalDev/TSafe/issues", prefix: null); 
+            Logger.Log("#########################################", prefix: null);
 
             DatabaseManager = new DatabaseManager(this, Config);
             if (IsConnectionAuthFailed)
@@ -101,7 +101,7 @@ namespace Tavstal.TSafe
         {
             if (IsConnectionAuthFailed)
             {
-                Logger.LogWarning($"# Unloading {GetPluginName()} due to database authentication error.");
+                Logger.Warning($"# Unloading {GetPluginName()} due to database authentication error.");
                 this.UnloadPlugin();
             }
         }
