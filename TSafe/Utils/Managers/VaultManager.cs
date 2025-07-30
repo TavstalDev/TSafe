@@ -79,8 +79,8 @@ namespace Tavstal.TSafe.Utils.Managers
             }
             catch (Exception ex)
             {
-                TSafe.Logger.LogException("Error in CreateVaultAsync");
-                TSafe.Logger.LogError(ex);
+                TSafe.Logger.Exception("Error in CreateVaultAsync");
+                TSafe.Logger.Error(ex);
             }
 
             return result;
@@ -122,8 +122,8 @@ namespace Tavstal.TSafe.Utils.Managers
             }
             catch (Exception ex)
             {
-                TSafe.Logger.LogException("Error in OpenVaultAsync:");
-                TSafe.Logger.LogError(ex);
+                TSafe.Logger.Exception("Error in OpenVaultAsync:");
+                TSafe.Logger.Error(ex);
             }
         }
 
@@ -197,15 +197,15 @@ namespace Tavstal.TSafe.Utils.Managers
                     }
                     catch (Exception ex)
                     {
-                        TSafe.Logger.LogException("Error in DestroyVault game thread:");
-                        TSafe.Logger.LogError(ex);
+                        TSafe.Logger.Exception("Error in DestroyVault game thread:");
+                        TSafe.Logger.Error(ex);
                     }
                 });
             }
             catch (Exception ex)
             {
-                TSafe.Logger.LogException("Error in DestroyVault:");
-                TSafe.Logger.LogError(ex);
+                TSafe.Logger.Exception("Error in DestroyVault:");
+                TSafe.Logger.Error(ex);
             }
         }
 

@@ -61,8 +61,8 @@ namespace Tavstal.TSafe.Utils.Managers
             }
             catch (Exception ex)
             {
-                TSafe.Logger.LogException("Error in checkSchema:");
-                TSafe.Logger.LogError(ex);
+                TSafe.Logger.Exception("Error in checkSchema:");
+                TSafe.Logger.Error(ex);
             }
         }
 
