@@ -1,23 +1,27 @@
-﻿using Newtonsoft.Json;
-using Tavstal.TLibrary.Models.Database;
+﻿using Tavstal.TLibrary.Models.Database;
+using YamlDotNet.Serialization;
 
 namespace Tavstal.TSafe.Models
 {
     public class DatabaseData : DatabaseSettingsBase
     {
         // Note: It starts from 7 because there are 6 defined property in the base class
-        [JsonProperty(Order = 7)]
-        public string VaultTable { get; set; }
-        [JsonProperty(Order = 8)]
-        public string VaultItemsTable { get; set; }
-        [JsonProperty(Order = 9)]
+        [YamlMember(Order = 7)]
+        public string TablePrefix { get; set; }
+        
+        [YamlMember(Order = 8)]
         public int SaveInterval { get; set; }
         
-        public DatabaseData(string vaultTable, string vaultItemsTable, int saveInterval)
+        public DatabaseData(string tablePrefix, int saveInterval)
         {
-            VaultTable = vaultTable;
-            VaultItemsTable = vaultItemsTable;
+            TablePrefix = tablePrefix;
             SaveInterval = saveInterval;
+        }
+
+        public DatabaseData()
+        {
+            TablePrefix = "tsafe_";
+            SaveInterval = 300;
         }
     }
 }

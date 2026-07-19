@@ -1,41 +1,58 @@
 using System;
-using Newtonsoft.Json;
 using SDG.Unturned;
 using Tavstal.TLibrary.Models.Database.Attributes;
+using YamlDotNet.Serialization;
 
 namespace Tavstal.TSafe.Models
 {
     public class VaultItem
     {
-        [JsonProperty("vaultId")]
+        [YamlMember(Order = 0)]
+        [SqlMember(columnType: "varchar(36)")]
+        public string Id { get; set; }
+        
+        [YamlMember(Order = 1)]
         [SqlMember(columnType: "varchar(36)")]
         public string VaultId { get; set; }
-        [JsonProperty("itemId")]
+        
+        [YamlMember(Order = 2)]
         [SqlMember(isUnsigned: true)]
         public ushort ItemId { get; set; }
-        [JsonProperty("amount")]
+        
+        [YamlMember(Order = 3)]
         [SqlMember]
         public byte Amount { get; set; }
-        [JsonProperty("quality")]
+        
+        [YamlMember(Order = 4)]
         [SqlMember]
         public byte Quality { get; set; }
-        [JsonProperty("state")]
+        
+        [YamlMember(Order = 5)]
         [SqlMember]
         public string StateBase64 { get; set; }
-        [JsonProperty("x")]
+        
+        [YamlMember(Order = 6)]
         [SqlMember]
         public byte X { get; set; }
-        [JsonProperty("y")]
+        
+        [YamlMember(Order = 7)]
         [SqlMember]
         public byte Y { get; set; }
-        [JsonProperty("rot")]
+        
+        [YamlMember(Order = 8)]
         [SqlMember]
         public byte Rot { get; set; }
-        
-        public VaultItem() {}
 
-        public VaultItem(string vaultId, ushort itemId, byte amount, byte quality, byte[] state, byte x, byte y, byte rot)
+        public VaultItem()
         {
+            Id = Guid.NewGuid().ToString();
+            VaultId = string.Empty;
+            StateBase64 = string.Empty;
+        }
+
+        public VaultItem(string id, string vaultId, ushort itemId, byte amount, byte quality, byte[] state, byte x, byte y, byte rot)
+        {
+            Id = id;
             VaultId = vaultId;
             ItemId = itemId;
             Amount = amount;
@@ -46,8 +63,9 @@ namespace Tavstal.TSafe.Models
             Rot = rot;
         }
         
-        public VaultItem(ushort itemId, byte amount, byte quality, byte[] state, byte x, byte y, byte rot)
+        public VaultItem(string id, ushort itemId, byte amount, byte quality, byte[] state, byte x, byte y, byte rot)
         {
+            Id = id;
             VaultId = Guid.NewGuid().ToString();
             ItemId = itemId;
             Amount = amount;
@@ -58,9 +76,7 @@ namespace Tavstal.TSafe.Models
             Rot = rot;
         }
 
-        public Item ToItem()
-        {
-            return new Item(ItemId, Amount, Quality, Convert.FromBase64String(StateBase64));
-        }
+        public Item ToItem() =>
+            new Item(ItemId, Amount, Quality, Convert.FromBase64String(StateBase64));
     }
 }

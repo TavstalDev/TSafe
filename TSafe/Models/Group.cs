@@ -1,19 +1,26 @@
-using Newtonsoft.Json;
+using YamlDotNet.Serialization;
 
 namespace Tavstal.TSafe.Models
 {
     public class Group
     {
-        [JsonProperty("name")]
+        [YamlMember(Order = 0)]
         public string Name { get; set; }
-        [JsonProperty("permission")]
+        
+        [YamlMember(Order = 1)]
         public string Permission { get; set; }
-        [JsonProperty("sizeX")]
+        
+        [YamlMember(Order = 2)]
         public byte SizeX { get; set; }
-        [JsonProperty("sizeY")]
+        
+        [YamlMember(Order = 3)]
         public byte SizeY { get; set; }
 
-        public Group() { }
+        public Group()
+        {
+            Name = string.Empty;
+            Permission = string.Empty;
+        }
 
         public Group(string name, string permission, byte sizeX, byte sizeY)
         {

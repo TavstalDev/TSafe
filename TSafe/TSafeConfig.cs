@@ -1,28 +1,29 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using Tavstal.TLibrary.Models.Config;
+using Tavstal.TLibrary.Models.Logging;
 using Tavstal.TSafe.Models;
-using Tavstal.TLibrary.Models.Plugin;
+using YamlDotNet.Serialization;
 
 namespace Tavstal.TSafe
 {
     // ReSharper disable once InconsistentNaming
-    public class TSafeConfig : ConfigurationBase
+    public class TSafeConfig : YamlConfiguration
     {
-        [JsonProperty(Order = 3)]
+        [YamlMember(Order = 3)]
         public DatabaseData Database { get; set; }
-        [JsonProperty(Order = 4)]
+        [YamlMember(Order = 4)]
         public byte DefaultRowX;
-        [JsonProperty(Order = 5)]
+        [YamlMember(Order = 5)]
         public byte DefaultRowY;
-        [JsonProperty(Order = 6)]
+        [YamlMember(Order = 6)]
         public List<Group> Groups { get; set; }
 
         public override void LoadDefaults()
         {
-            DebugMode = false;
             Locale = "en";
+            LogLevel = ELogLevel.INFO;
             DownloadLocalePacks = true;
-            Database = new DatabaseData("tsafe_vault", "tsafe_vaultitems", 300);
+            Database = new DatabaseData("tsafe_", 300);
             DefaultRowX = 5;
             DefaultRowY = 5;
             Groups = new List<Group>
@@ -35,7 +36,16 @@ namespace Tavstal.TSafe
         }
 
         // Required because of the library
-        public TSafeConfig() { }
-        public TSafeConfig(string fileName, string path) : base(fileName, path) { }
+        public TSafeConfig()
+        {
+            Database = new DatabaseData("tsafe_", 300);
+            Groups = new List<Group>();
+        }
+
+        public TSafeConfig(string fileName, string path) : base(fileName, path)
+        {
+            Database = new DatabaseData("tsafe_", 300);
+            Groups = new List<Group>();
+        }
     }
 }
