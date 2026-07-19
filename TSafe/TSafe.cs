@@ -1,9 +1,15 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using SDG.Unturned;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Tavstal.TLibrary;
+using Tavstal.TLibrary.Extensions;
+using Tavstal.TLibrary.Models.Database;
+using Tavstal.TLibrary.Models.Logging;
 using Tavstal.TLibrary.Models.Plugin;
+using Tavstal.TLibrary.Threading;
 using Tavstal.TSafe.Utils.Handlers;
 using Tavstal.TSafe.Utils.Managers;
 
@@ -15,54 +21,62 @@ namespace Tavstal.TSafe
     // ReSharper disable once InconsistentNaming
     public class TSafe : PluginBase<TSafeConfig>
     {
-        public static TSafe Instance { get; private set; }
+        public static TSafe Instance { get; private set; } = null!;
         internal static bool IsShuttingDown { get; set; }
-        public static DatabaseManager DatabaseManager { get; private set; }
-        /// <summary>
-        /// Used to prevent error spamming that is related to database configuration.
-        /// </summary>
+        public static DatabaseManager DatabaseManager { get; private set; } = null!;
         public static bool IsConnectionAuthFailed { get; set; }
 
+        private readonly SemaphoreSlim _updateLock = new SemaphoreSlim(1, 1);
         private int _time;
 
+        
+        public override void OnPreLoad()
+        {
+            Instance = this;
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("────────────────────────────────────────────────────────");
+            sb.AppendLine();
+            sb.AppendLine("████████╗███████╗ █████╗ ███████╗███████╗");
+            sb.AppendLine("╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔════╝");
+            sb.AppendLine("   ██║   ███████╗███████║█████╗  █████╗  ");
+            sb.AppendLine("   ██║   ╚════██║██╔══██║██╔══╝  ██╔══╝  ");
+            sb.AppendLine("   ██║   ███████║██║  ██║██║     ███████╗");
+            sb.AppendLine("   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝");
+            sb.AppendLine();
+            sb.AppendLine("[ About ]");
+            sb.AppendLine(" ▸ Developer : Tavstal");
+            sb.AppendLine(" ▸ Discord   : @Tavstal");
+            sb.AppendLine(" ▸ Website   : https://redstoneplugins.com");
+            sb.AppendLine(" ▸ GitHub    : https://github.com/TavstalDev");
+            sb.AppendLine();
+            sb.AppendLine("[ Build ]");
+            sb.AppendLine($" ▸ Version   : {Version}");
+            sb.AppendLine($" ▸ Build Date: {BuildDate} UTC");
+            sb.AppendLine($" ▸ TLibrary  : {LibraryVersion}");
+            sb.AppendLine();
+            sb.AppendLine("[ Support ]");
+            sb.AppendLine(" ▸ Report issues or request features:");
+            sb.AppendLine(" ▸ https://github.com/TavstalDev/TSafe/issues");
+            sb.AppendLine();
+            sb.AppendLine("────────────────────────────────────────────────────────");
+            Logger.Log(ELogLevel.COMMAND, sb.ToString(), includePrefixes: false, color:  ConsoleColor.Cyan);
+        }
+        
         /// <summary>
         /// Fired when the plugin is loaded.
         /// </summary>
         public override void OnLoad()
         {
-            Instance = this;
             // Attach event, which will be fired when all plugins are loaded.
             Level.onPostLevelLoaded += Event_OnPluginsLoaded;
             // Attach player related events
             PlayerEventHandler.AttachEvents();
 
-            Logger.Log("████████╗███████╗ █████╗ ███████╗███████╗", ConsoleColor.Cyan, prefix: null);
-            Logger.Log("╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔════╝", ConsoleColor.Cyan, prefix: null);
-            Logger.Log("   ██║   ███████╗███████║█████╗  █████╗  ", ConsoleColor.Cyan, prefix: null);
-            Logger.Log("   ██║   ╚════██║██╔══██║██╔══╝  ██╔══╝  ", ConsoleColor.Cyan, prefix: null);
-            Logger.Log("   ██║   ███████║██║  ██║██║     ███████╗", ConsoleColor.Cyan, prefix: null);
-            Logger.Log("   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝", ConsoleColor.Cyan, prefix: null);
-            Logger.Log("#########################################", prefix: null);
-            Logger.Log("#       Thanks for using this plugin!   #", prefix: null);
-            Logger.Log("#########################################", prefix: null);
-            Logger.Log("# Developed By: Tavstal", prefix: null);
-            Logger.Log("# Discord:      @Tavstal", prefix: null);
-            Logger.Log("# Website:      https://redstoneplugins.com", prefix: null);
-            Logger.Log("# My GitHub:    https://tavstaldev.github.io", prefix: null);
-            Logger.Log("#########################################", prefix: null);
-            Logger.Log($"# Plugin Version:    {Version}", prefix: null);
-            Logger.Log($"# Build Date:        {BuildDate}", prefix: null);
-            Logger.Log($"# TLibrary Version:  {LibraryVersion}", prefix: null);
-            Logger.Log("#########################################", prefix: null);
-            Logger.Log("# Found an issue or have a suggestion?", prefix: null);
-            Logger.Log("# Report it here: https://github.com/TavstalDev/TSafe/issues", prefix: null); 
-            Logger.Log("#########################################", prefix: null);
-
             DatabaseManager = new DatabaseManager(this, Config);
             if (IsConnectionAuthFailed)
                 return;
 
-            Logger.Log($"# {GetPluginName()} has been loaded.");
+            Logger.Info($"# {GetPluginName()} has been loaded.");
         }
 
         /// <summary>
@@ -72,7 +86,7 @@ namespace Tavstal.TSafe
         {
             Level.onPostLevelLoaded -= Event_OnPluginsLoaded;
             PlayerEventHandler.DetachEvents();
-            Logger.Log($"# {GetPluginName()} has been successfully unloaded.");
+            Logger.Info($"# {GetPluginName()} has been successfully unloaded.");
 
             try
             {
@@ -119,16 +133,32 @@ namespace Tavstal.TSafe
             // Executes the code every 300 seconds (5 minutes)
             if (_time % (Config.Database.SaveInterval * 50) != 0)
                 return;
-            
-            Task.Run(async () =>
+
+            // TODO:
+            BackgroundThreadDispatcher.RunAsync(async () =>
             {
-                foreach (var vault in VaultManager.VaultList)
+                await _updateLock.WaitAsync();
+                try
                 {
-                    VaultManager.CancelVaultDestroy(vault.Key);
-                    InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
-                    await DatabaseManager.RemoveVaultItemsAsync(vault.Key);
-                    await DatabaseManager.AddVaultItemAsync(vault.Key, storage.items.items);
-                    await MainThreadDispatcher.RunOnMainThreadAsync(() => VaultManager.DestroyVaultNoQueue(vault.Key));
+
+                    Dictionary<string, List<ItemJar>> vaultItems = new Dictionary<string, List<ItemJar>>();
+                    QueryParameter[] parameters = new QueryParameter[VaultManager.VaultList.Count];
+                    foreach (var vault in VaultManager.VaultList)
+                    {
+                        VaultManager.CancelVaultDestroy(vault.Key);
+                        InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
+                        vaultItems.Add(vault.Key, storage.items.items);
+                        
+                        await DatabaseManager.Items.DeleteAsync(QueryParameter.eq("VaultId", vault.Key));
+                        await DatabaseManager.AddVaultItemAsync(vault.Key, storage.items.items);
+                        await MainThreadDispatcher.RunAsync(() => VaultManager.DestroyVaultNoQueue(vault.Key));
+                    }
+
+                    
+                }
+                finally
+                {
+                    _updateLock.Release();
                 }
             });
         }

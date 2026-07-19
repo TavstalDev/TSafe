@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Rocket.Unturned.Player;
 using SDG.Unturned;
-using Tavstal.TLibrary;
+using Tavstal.TLibrary.Threading;
 using Tavstal.TSafe.Models;
 using UnityEngine;
 
+// TODO
 namespace Tavstal.TSafe.Utils.Managers
 {
     /// <summary>
     /// A static class responsible for managing vault-related operations within the game.
     /// </summary>
-    /// <remarks>
-    /// This class handles the creation, retrieval, updating, and deletion of vaults in the system. It also provides utilities for interacting with vault data and performing necessary actions on them.
-    /// </remarks>
     public static class VaultManager
     {
         // ReSharper disable once InconsistentNaming
@@ -31,9 +29,6 @@ namespace Tavstal.TSafe.Utils.Managers
         /// <returns>
         /// A task that represents the asynchronous operation, containing the created <see cref="UnturnedVault"/> object.
         /// </returns>
-        /// <remarks>
-        /// This method asynchronously creates a vault with the specified <paramref name="vaultId"/>. It initializes the vault and prepares it for use in the game.
-        /// </remarks>
         private static async Task<UnturnedVault> CreateVaultAsync(string vaultId)
         {
             UnturnedVault result = null;
@@ -79,7 +74,7 @@ namespace Tavstal.TSafe.Utils.Managers
             }
             catch (Exception ex)
             {
-                TSafe.Logger.Exception("Error in CreateVaultAsync");
+                TSafe.Logger.Error("Error in CreateVaultAsync");
                 TSafe.Logger.Error(ex);
             }
 
@@ -122,7 +117,7 @@ namespace Tavstal.TSafe.Utils.Managers
             }
             catch (Exception ex)
             {
-                TSafe.Logger.Exception("Error in OpenVaultAsync:");
+                TSafe.Logger.Error("Error in OpenVaultAsync:");
                 TSafe.Logger.Error(ex);
             }
         }
@@ -197,14 +192,14 @@ namespace Tavstal.TSafe.Utils.Managers
                     }
                     catch (Exception ex)
                     {
-                        TSafe.Logger.Exception("Error in DestroyVault game thread:");
+                        TSafe.Logger.Error("Error in DestroyVault game thread:");
                         TSafe.Logger.Error(ex);
                     }
                 });
             }
             catch (Exception ex)
             {
-                TSafe.Logger.Exception("Error in DestroyVault:");
+                TSafe.Logger.Error("Error in DestroyVault:");
                 TSafe.Logger.Error(ex);
             }
         }
