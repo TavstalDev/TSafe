@@ -19,6 +19,17 @@ A RocketMod plugin for Unturned offering virtual enderchest-style storage, saved
 - Customizable Sizes 
 - Admin controls
 
+### Requirements
+- Unturned 3.24.x or later
+- [RocketMod](https://rocketmod.net/) installed on the server
+
+### Installation
+
+1. Download the latest release and its libraries from the [Releases](https://github.com/TavstalDev/TSafe/releases) page.
+2. Place `TSafe.dll` into your server's `Rocket/Plugins/` directory.
+3. Extract the libraries archive into `Rocket/Libraries` directory.
+4. Start or restart the server. The plugin will generate a default YAML configuration file on first load.
+5. Edit the configuration file to your liking, then reload the plugin or restart the server.
 
 ### Commands
 | - means <b>or</b></br>
@@ -61,3 +72,30 @@ A RocketMod plugin for Unturned offering virtual enderchest-style storage, saved
 <br>
 <b>Permission(s):</b> tsafe.command.safeadmin.clearall
 </details>
+
+## Building from Source
+
+### Prerequisites
+
+- .NET Framework 4.8 SDK / targeting pack
+
+### Steps
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/TavstalDev/TSafe.git
+   ```
+2. Open `TSafe.sln` in your IDE.
+3. Build the project:
+   ```
+   dotnet build -c Release
+   ```
+4. The output DLL will be at `TSafe/bin/Release/net48/TSafe.dll`.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0. See the `LICENSE` file for more details.
+
+## Contact
+
+For issues or feature requests, please use the [GitHub issue tracker](https://github.com/TavstalDev/TSafe/issues).
