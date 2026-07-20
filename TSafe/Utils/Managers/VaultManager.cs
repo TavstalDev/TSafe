@@ -1,13 +1,15 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Rocket.Unturned.Player;
 using SDG.Unturned;
+using Tavstal.TLibrary.Extensions;
+using Tavstal.TLibrary.Models.Database;
 using Tavstal.TLibrary.Threading;
 using Tavstal.TSafe.Models;
 using UnityEngine;
 
-// TODO
 namespace Tavstal.TSafe.Utils.Managers
 {
     /// <summary>
@@ -16,11 +18,11 @@ namespace Tavstal.TSafe.Utils.Managers
     public static class VaultManager
     {
         // ReSharper disable once InconsistentNaming
-        private static readonly Dictionary<string, UnturnedVault> _vaultList = new Dictionary<string, UnturnedVault>();
-        public static Dictionary<string, UnturnedVault> VaultList => _vaultList;
+        private static readonly ConcurrentDictionary<string, UnturnedVault> _vaultList = new ConcurrentDictionary<string, UnturnedVault>();
+        public static ConcurrentDictionary<string, UnturnedVault> VaultList => _vaultList;
         
         // ReSharper disable once InconsistentNaming
-        private static readonly Dictionary<string, DateTime> _destroyQueue = new Dictionary<string, DateTime>();
+        private static readonly ConcurrentDictionary<string, DateTime> _destroyQueue = new ConcurrentDictionary<string, DateTime>();
 
         /// <summary>
         /// Creates a new vault asynchronously.
@@ -29,22 +31,25 @@ namespace Tavstal.TSafe.Utils.Managers
         /// <returns>
         /// A task that represents the asynchronous operation, containing the created <see cref="UnturnedVault"/> object.
         /// </returns>
-        private static async Task<UnturnedVault> CreateVaultAsync(string vaultId)
+        private static async Task<UnturnedVault?> CreateVaultAsync(string vaultId)
         {
-            UnturnedVault result = null;
+            UnturnedVault? result = null;
 
             try
             {
-                Vault vault = await TSafe.DatabaseManager.FindVaultAsync(vaultId);
+                Vault? vault = await TSafe.DatabaseManager.Vaults.GetAsync(vaultId);
                 if (vault == null)
                     return null;
                 
-                List<VaultItem> vaultItems = await TSafe.DatabaseManager.GetVaultItemsAsync(vault.Id);
+                List<VaultItem>? vaultItems = await TSafe.DatabaseManager.Items.GetAsync(queryParameters: QueryParameter.eq("VaultId", vault.Id));
 
-                BarricadeDrop drop = null;
-                await MainThreadDispatcher.RunOnMainThreadAsync(() =>
+                BarricadeDrop? drop = null;
+                await MainThreadDispatcher.RunAsync(() =>
                 {
-                    ItemBarricadeAsset barricadeAsset = Assets.find(EAssetType.ITEM, 328) as ItemBarricadeAsset;
+                    ItemBarricadeAsset? barricadeAsset = Assets.find(EAssetType.ITEM, 328) as ItemBarricadeAsset;
+                    if (barricadeAsset == null)
+                        return;
+                    
                     Transform transform = BarricadeManager.dropBarricade(new Barricade(barricadeAsset), null,
                         new Vector3(0, -100, 0), 0, 0, 0, vault.OwnerId, 29832);
                     drop = BarricadeManager.FindBarricadeByRootTransform(transform);
@@ -55,29 +60,29 @@ namespace Tavstal.TSafe.Utils.Managers
                 
                 InteractableStorage interactableStorage = (InteractableStorage)drop.interactable;
                 List<VaultItem> itemsToForceAdd = new List<VaultItem>();
-                foreach (VaultItem item in vaultItems)
-                {
-                    try
+                if (vaultItems != null)
+                    foreach (VaultItem item in vaultItems)
                     {
-                        interactableStorage.items.loadItem(item.X, item.Y, item.Rot, item.ToItem());
+                        try
+                        {
+                            interactableStorage.items.loadItem(item.X, item.Y, item.Rot, item.ToItem());
+                        }
+                        catch
+                        {
+                            itemsToForceAdd.Add(item);
+                        }
+                        
                     }
-                    catch
-                    {
-                        itemsToForceAdd.Add(item);
-                    }
-                }
                 foreach (VaultItem item in itemsToForceAdd)
                     interactableStorage.items.tryAddItem(item.ToItem());
 
                 result = new UnturnedVault(drop, vault.SizeX, vault.SizeY);
-                _vaultList.Add(vaultId, result);
+                _vaultList.TryAdd(vaultId, result);
             }
             catch (Exception ex)
             {
-                TSafe.Logger.Error("Error in CreateVaultAsync");
-                TSafe.Logger.Error(ex);
+                TSafe.Logger.Error("Error in CreateVaultAsync", ex);
             }
-
             return result;
         }
         
@@ -89,18 +94,20 @@ namespace Tavstal.TSafe.Utils.Managers
         /// <returns>
         /// A task that represents the asynchronous operation of opening the vault.
         /// </returns>
-        /// <remarks>
-        /// This method asynchronously handles the process of opening the vault specified by <paramref name="guid"/> for the given <paramref name="player"/>. 
-        /// It allows the player to interact with the vault's contents once the operation is complete.
-        /// </remarks>
         public static async Task OpenVaultAsync(UnturnedPlayer player, string guid)
         {
             try
             {
-                if (!_vaultList.TryGetValue(guid, out UnturnedVault vaultStorage))
+                if (!_vaultList.TryGetValue(guid, out UnturnedVault? vaultStorage))
                     vaultStorage = await CreateVaultAsync(guid);
 
-                MainThreadDispatcher.RunOnMainThread(() =>
+                if (vaultStorage == null)
+                {
+                    TSafe.Logger.Error($"Failed to open vault for {player.CharacterName}.");
+                    return;
+                }
+
+                await MainThreadDispatcher.RunAsync(() =>
                 {
                     InteractableStorage interactableStorage = (InteractableStorage)vaultStorage.StorageDrop.interactable;
 
@@ -117,8 +124,7 @@ namespace Tavstal.TSafe.Utils.Managers
             }
             catch (Exception ex)
             {
-                TSafe.Logger.Error("Error in OpenVaultAsync:");
-                TSafe.Logger.Error(ex);
+                TSafe.Logger.Error("Error in OpenVaultAsync:", ex);
             }
         }
 
@@ -126,52 +132,35 @@ namespace Tavstal.TSafe.Utils.Managers
         /// Requests the destruction of a vault with the specified ID.
         /// </summary>
         /// <param name="vaultId">The unique identifier (ID) of the vault to be destroyed.</param>
-        /// <remarks>
-        /// This method initiates the process of destroying the vault identified by <paramref name="vaultId"/>. 
-        /// The vault will be permanently removed from the game map.
-        /// </remarks>
         public static void RequestVaultDestroy(string vaultId)
         {
             if (_destroyQueue.ContainsKey(vaultId))
                 return;
             
-            _destroyQueue.Add(vaultId, DateTime.Now.AddMinutes(5));
+            _destroyQueue.TryAdd(vaultId, DateTime.Now.AddMinutes(5));
         }
 
         /// <summary>
         /// Cancels a pending request to destroy a vault with the specified ID.
         /// </summary>
         /// <param name="vaultId">The unique identifier (ID) of the vault for which the destruction request should be canceled.</param>
-        /// <remarks>
-        /// This method cancels any ongoing or pending destruction request for the vault identified by <paramref name="vaultId"/>. 
-        /// The vault will not be destroyed if this method is called before the destruction is finalized.
-        /// </remarks>
         public static void CancelVaultDestroy(string vaultId)
         {
             if (_destroyQueue.ContainsKey(vaultId))
-                _destroyQueue.Remove(vaultId);
+                _destroyQueue.TryRemove(vaultId, out _);
         }
 
         /// <summary>
         /// Immediately destroys the vault with the specified ID without queuing the operation.
         /// </summary>
         /// <param name="vaultId">The unique identifier (ID) of the vault to be destroyed.</param>
-        /// <remarks>
-        /// This method performs an immediate destruction of the vault identified by <paramref name="vaultId"/> without waiting for any pending operations. 
-        /// The vault and any associated data will be permanently removed from the game map without being queued for processing.
-        /// </remarks>
-        public static void DestroyVaultNoQueue(string vaultId)
-        {
+        public static void DestroyVaultNoQueue(string vaultId) =>
             DestroyVault(vaultId);
-        }
         
         /// <summary>
         /// Destroys the vault with the specified ID.
         /// </summary>
         /// <param name="vaultId">The unique identifier (ID) of the vault to be destroyed.</param>
-        /// <remarks>
-        /// This method performs the destruction of the vault identified by <paramref name="vaultId"/>.
-        /// </remarks>
         private static void DestroyVault(string vaultId)
         {
             try
@@ -179,7 +168,7 @@ namespace Tavstal.TSafe.Utils.Managers
                 if (!_vaultList.TryGetValue(vaultId, out UnturnedVault vaultStorage))
                     return;
 
-                MainThreadDispatcher.RunOnMainThread(() =>
+                MainThreadDispatcher.Run(() =>
                 {
                     try
                     {
@@ -188,53 +177,58 @@ namespace Tavstal.TSafe.Utils.Managers
                             (InteractableStorage)vaultStorage.StorageDrop.interactable;
                         interactableStorage.items.clear();
                         barricadeData.barricade.askDamage(ushort.MaxValue);
-                        _vaultList.Remove(vaultId);
+                        _vaultList.TryRemove(vaultId, out _);
                     }
                     catch (Exception ex)
                     {
-                        TSafe.Logger.Error("Error in DestroyVault game thread:");
-                        TSafe.Logger.Error(ex);
+                        TSafe.Logger.Error("Error in DestroyVault game thread:", ex);
                     }
                 });
             }
             catch (Exception ex)
             {
-                TSafe.Logger.Error("Error in DestroyVault:");
-                TSafe.Logger.Error(ex);
+                TSafe.Logger.Error("Error in DestroyVault:", ex);
             }
         }
 
         /// <summary>
         /// Performs the update logic for the system or component on each frame.
         /// </summary>
-        /// <remarks>
-        /// This method is called periodically to execute the update logic. 
-        /// It should be called during each frame or cycle of the application.
-        /// </remarks>
         internal static void Update()
         {
             if (_destroyQueue.Count < 1)
                return;
 
             List<string> toRemove = new List<string>();
+            List<string> vaultIds = new List<string>();
+            List<VaultItem> vaultItems = new List<VaultItem>();
             foreach (var elem in _destroyQueue)
             {
                 if (elem.Value > DateTime.Now)
                     continue;
                 
                 toRemove.Add(elem.Key);
-                Task.Run(async () =>
-                {
-                    UnturnedVault vault = _vaultList[elem.Key];
-                    InteractableStorage storage = (InteractableStorage)vault.StorageDrop.interactable;
-                    await TSafe.DatabaseManager.RemoveVaultItemsAsync(elem.Key);
-                    await TSafe.DatabaseManager.AddVaultItemAsync(elem.Key, storage.items.items);
-                    await MainThreadDispatcher.RunOnMainThreadAsync(() => DestroyVault(elem.Key));
-                });
+                UnturnedVault vault = _vaultList[elem.Key];
+                InteractableStorage storage = (InteractableStorage)vault.StorageDrop.interactable;
+                vaultIds.Add(elem.Key);
+                foreach (var item in storage.items.items)
+                    vaultItems.Add(new VaultItem(elem.Key, item));
             }
 
-            foreach (var elem in toRemove)
-                _destroyQueue.Remove(elem);
+            BackgroundThreadDispatcher.Run(async () =>
+            {
+                var ids = new List<object>();
+                ids.AddRange(vaultIds);
+                await TSafe.DatabaseManager.Items.DeleteRangeAsync("VaultId", ids);
+                await TSafe.DatabaseManager.Items.AddRangeAsync(vaultItems);
+                await MainThreadDispatcher.RunAsync(() =>
+                {
+                    foreach (var vaultId in vaultIds)
+                        DestroyVault(vaultId);
+                });
+            });
+
+            toRemove.ForEach(x => _destroyQueue.TryRemove(x, out _));
         }
     }
 }
