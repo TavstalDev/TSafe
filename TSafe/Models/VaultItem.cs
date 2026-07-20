@@ -49,24 +49,24 @@ namespace Tavstal.TSafe.Models
             VaultId = string.Empty;
             StateBase64 = string.Empty;
         }
+        
+        public VaultItem(string vaultId, ItemJar itemJar)
+        {
+            Id = Guid.NewGuid().ToString();
+            VaultId = vaultId;
+            ItemId = itemJar.item.id;
+            Amount = itemJar.item.amount;
+            Quality = itemJar.item.quality;
+            StateBase64 = Convert.ToBase64String(itemJar.item.metadata);
+            X = itemJar.x;
+            Y = itemJar.y;
+            Rot = itemJar.rot;
+        }
 
         public VaultItem(string id, string vaultId, ushort itemId, byte amount, byte quality, byte[] state, byte x, byte y, byte rot)
         {
             Id = id;
             VaultId = vaultId;
-            ItemId = itemId;
-            Amount = amount;
-            Quality = quality;
-            StateBase64 = Convert.ToBase64String(state);
-            X = x;
-            Y = y;
-            Rot = rot;
-        }
-        
-        public VaultItem(string id, ushort itemId, byte amount, byte quality, byte[] state, byte x, byte y, byte rot)
-        {
-            Id = id;
-            VaultId = Guid.NewGuid().ToString();
             ItemId = itemId;
             Amount = amount;
             Quality = quality;
