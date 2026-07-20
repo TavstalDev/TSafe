@@ -1,23 +1,19 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using SDG.Unturned;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Tavstal.TLibrary.Extensions;
-using Tavstal.TLibrary.Models.Database;
 using Tavstal.TLibrary.Models.Logging;
 using Tavstal.TLibrary.Models.Plugin;
 using Tavstal.TLibrary.Threading;
+using Tavstal.TSafe.Models;
 using Tavstal.TSafe.Utils.Handlers;
 using Tavstal.TSafe.Utils.Managers;
 
 namespace Tavstal.TSafe
 {
-    /// <summary>
-    /// The main plugin class.
-    /// </summary>
     // ReSharper disable once InconsistentNaming
     public class TSafe : PluginBase<TSafeConfig>
     {
@@ -68,7 +64,8 @@ namespace Tavstal.TSafe
         public override void OnLoad()
         {
             // Attach event, which will be fired when all plugins are loaded.
-            Level.onPostLevelLoaded += Event_OnPluginsLoaded;
+            Level.onPostLevelLoaded += OnPluginsLoaded;
+            Provider.onCommenceShutdown += OnShutdown;
             // Attach player related events
             PlayerEventHandler.AttachEvents();
 
@@ -84,26 +81,16 @@ namespace Tavstal.TSafe
         /// </summary>
         public override void OnUnLoad()
         {
-            Level.onPostLevelLoaded -= Event_OnPluginsLoaded;
+            Level.onPostLevelLoaded -= OnPluginsLoaded;
+            Provider.onCommenceShutdown -= OnShutdown;
             PlayerEventHandler.DetachEvents();
             Logger.Info($"# {GetPluginName()} has been successfully unloaded.");
 
             try
             {
-                if (IsShuttingDown)
+                if (IsConnectionAuthFailed || IsShuttingDown)
                     return;
-                
-                foreach (var vault in VaultManager.VaultList)
-                {
-                    VaultManager.CancelVaultDestroy(vault.Key);
-                    InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
-                    Task.Run(async () =>
-                    {
-                        await DatabaseManager.RemoveVaultItemsAsync(vault.Key);
-                        await DatabaseManager.AddVaultItemAsync(vault.Key, storage.items.items);
-                        VaultManager.DestroyVaultNoQueue(vault.Key);
-                    });
-                }
+                BackgroundThreadDispatcher.RunAsync(async () => await BackupAsync());
             }
             catch
             {
@@ -111,7 +98,7 @@ namespace Tavstal.TSafe
             }
         }
 
-        private void Event_OnPluginsLoaded(int i)
+        private void OnPluginsLoaded(int i)
         {
             if (IsConnectionAuthFailed)
             {
@@ -119,9 +106,20 @@ namespace Tavstal.TSafe
                 this.UnloadPlugin();
             }
         }
+        
+        private void OnShutdown()
+        {
+            if (IsConnectionAuthFailed || IsShuttingDown)
+                return;
+            IsShuttingDown = true;
+            BackgroundThreadDispatcher.RunAsync(async () => await BackupAsync());
+        }
 
         private void FixedUpdate()
         {
+            if (IsConnectionAuthFailed)
+                return;
+            
             _time++;
             // Every second
             if (_time % 3000 != 0)
@@ -133,34 +131,40 @@ namespace Tavstal.TSafe
             // Executes the code every 300 seconds (5 minutes)
             if (_time % (Config.Database.SaveInterval * 50) != 0)
                 return;
+            
+            BackgroundThreadDispatcher.RunAsync(async () => await BackupAsync());
+        }
 
-            // TODO:
-            BackgroundThreadDispatcher.RunAsync(async () =>
+        private async Task BackupAsync()
+        {
+            await _updateLock.WaitAsync();
+            try
             {
-                await _updateLock.WaitAsync();
-                try
+                List<string> vaultIds = new List<string>();
+                List<VaultItem> vaultItems = new List<VaultItem>();
+                foreach (var vault in VaultManager.VaultList)
                 {
-
-                    Dictionary<string, List<ItemJar>> vaultItems = new Dictionary<string, List<ItemJar>>();
-                    QueryParameter[] parameters = new QueryParameter[VaultManager.VaultList.Count];
-                    foreach (var vault in VaultManager.VaultList)
-                    {
-                        VaultManager.CancelVaultDestroy(vault.Key);
-                        InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
-                        vaultItems.Add(vault.Key, storage.items.items);
-                        
-                        await DatabaseManager.Items.DeleteAsync(QueryParameter.eq("VaultId", vault.Key));
-                        await DatabaseManager.AddVaultItemAsync(vault.Key, storage.items.items);
-                        await MainThreadDispatcher.RunAsync(() => VaultManager.DestroyVaultNoQueue(vault.Key));
-                    }
-
-                    
+                    VaultManager.CancelVaultDestroy(vault.Key);
+                    InteractableStorage storage = (InteractableStorage)vault.Value.StorageDrop.interactable;
+                    vaultIds.Add(vault.Key);
+                    foreach (var item in storage.items.items)
+                        vaultItems.Add(new VaultItem(vault.Key, item));
                 }
-                finally
+
+                var ids = new List<object>();
+                ids.AddRange(vaultIds);
+                await DatabaseManager.Items.DeleteRangeAsync("VaultId", ids);
+                await DatabaseManager.Items.AddRangeAsync(vaultItems);
+                await MainThreadDispatcher.RunAsync(() =>
                 {
-                    _updateLock.Release();
-                }
-            });
+                    foreach (var vaultId in vaultIds)
+                        VaultManager.DestroyVaultNoQueue(vaultId);
+                });
+            }
+            finally
+            {
+                _updateLock.Release();
+            }
         }
 
         public override Dictionary<string, string> DefaultLocalization =>
