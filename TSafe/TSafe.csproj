@@ -86,10 +86,6 @@
       <HintPath>..\assets\libraries\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.UnityWebRequestModule">
-      <HintPath>..\assets\libraries\UnityEngine.UnityWebRequestModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="YamlDotNet">
       <HintPath>..\assets\libraries\YamlDotNet.dll</HintPath>
       <Private>False</Private>
