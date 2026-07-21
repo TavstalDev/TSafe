@@ -22,7 +22,7 @@ namespace Tavstal.TSafe.Commands
         public override string Help => "Manages the player's virtual storage.";
         public override string Syntax => "open | clear";
         public override List<string> Aliases => new List<string> { "locker", "storage", "enderchest", "ec" };
-        public override List<string> Permissions => new List<string> { "tsafe.command.safe" };
+        public override List<string> Permissions => new List<string> { "tsafe.command.safe", "tsafe.commands.safe", };
 
         // 'help' subcommand is built-in, you don't need to add it
         public override List<ISubcommand> SubCommands => new List<ISubcommand>
@@ -37,7 +37,7 @@ namespace Tavstal.TSafe.Commands
                     {
                         Vault vault = vaults[0];
                         await VaultManager.OpenVaultAsync(callerPlayer, vault.Id);
-                        TSafe.Instance.SendCommandReply(caller, "success_command_safe_open");
+                        TSafe.Instance.SendCommandReply(caller, "success_command_safe_open", TSafe.Instance.Config.General.MessageIcon);
                         return;
                     }
                     
@@ -59,7 +59,7 @@ namespace Tavstal.TSafe.Commands
                     string guid = Guid.NewGuid().ToString();
                     await TSafe.DatabaseManager.Vaults.AddAsync(new Vault(guid, callerPlayer.CharacterName, callerPlayer.CSteamID.m_SteamID, x, y));
                     await VaultManager.OpenVaultAsync(callerPlayer, guid);
-                    TSafe.Instance.SendCommandReply(caller, "success_command_safe_open");
+                    TSafe.Instance.SendCommandReply(caller, "success_command_safe_open", TSafe.Instance.Config.General.MessageIcon);
                 }),
             new SubCommand("clear", "Clears the virtual storage.", "clear", new List<string> { "empty" }, new List<string> { "tsafe.command.safe.clear" }, 
                 Plugin, AllowedCaller,
@@ -72,10 +72,10 @@ namespace Tavstal.TSafe.Commands
                         Vault vault = vaults[0];
                         await TSafe.DatabaseManager.Vaults.DeleteAsync(vault.Id);
                         VaultManager.DestroyVaultNoQueue(vault.Id);
-                        TSafe.Instance.SendCommandReply(caller, "success_command_safe_clear");
+                        TSafe.Instance.SendCommandReply(caller, "success_command_safe_clear", TSafe.Instance.Config.General.MessageIcon);
                         return;
                     }
-                    TSafe.Instance.SendCommandReply(caller, "success_command_safe_clear");
+                    TSafe.Instance.SendCommandReply(caller, "success_command_safe_clear", TSafe.Instance.Config.General.MessageIcon);
                 }),
         };
 

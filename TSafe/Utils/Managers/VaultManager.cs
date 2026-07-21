@@ -219,8 +219,10 @@ namespace Tavstal.TSafe.Utils.Managers
             {
                 var ids = new List<object>();
                 ids.AddRange(vaultIds);
-                await TSafe.DatabaseManager.Items.DeleteRangeAsync("VaultId", ids);
-                await TSafe.DatabaseManager.Items.AddRangeAsync(vaultItems);
+                if (ids.Count > 0)
+                    await TSafe.DatabaseManager.Items.DeleteRangeAsync("VaultId", ids);
+                if (vaultItems.Count > 0)
+                    await TSafe.DatabaseManager.Items.AddRangeAsync(vaultItems);
                 await MainThreadDispatcher.RunAsync(() =>
                 {
                     foreach (var vaultId in vaultIds)

@@ -13,14 +13,20 @@ namespace Tavstal.TSafe.Commands
         public string Help => "Gets the version of the plugin";
         public string Syntax => "";
         public List<string> Aliases => new List<string>();
-        public List<string> Permissions => new List<string> { "tsafe.command.version" };
+        public List<string> Permissions => new List<string> { "tsafe.command.version", "tsafe.commands.version" };
         
         public void Execute(IRocketPlayer caller, string[] command)
         {
-            TSafe.Instance.SendPlainCommandReply(caller, "#########################################");
-            TSafe.Instance.SendPlainCommandReply(caller, $"# Build Version: {TSafe.Version}");
-            TSafe.Instance.SendPlainCommandReply(caller, $"# Build Date: {TSafe.BuildDate}");
-            TSafe.Instance.SendPlainCommandReply(caller, "#########################################");
+            var instance = TSafe.Instance;
+            var config = instance.Config.General;
+            var icon = config.MessageIcon;
+            string message = string.Join(System.Environment.NewLine, 
+                $"&b&l[{instance.GetPluginName()}]&r System Info:",
+                $"&b • Version: &r{TSafe.Version}",
+                $"&b • Build Date: &r{TSafe.BuildDate}",
+                "&b • Developer: &rTavstal");
+            
+            instance.SendPlainCommandReply(caller, message, icon);
         }
     }
 }

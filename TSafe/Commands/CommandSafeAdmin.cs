@@ -22,7 +22,7 @@ namespace Tavstal.TSafe.Commands
         public override string Help => "Manages every virtual storage.";
         public override string Syntax => "list | open | clear | clearall";
         public override List<string> Aliases => new List<string> { "lockeradmin", "storageadmin", "enderchestadmin", "ecadmin" };
-        public override List<string> Permissions => new List<string> { "tsafe.command.safeadmin" };
+        public override List<string> Permissions => new List<string> { "tsafe.command.safeadmin", "tsafe.commands.safeadmin" };
 
         public override List<ISubcommand> SubCommands => new List<ISubcommand>
         {
@@ -42,7 +42,7 @@ namespace Tavstal.TSafe.Commands
                         UnturnedPlayer targetPlayer = UnturnedPlayer.FromName(args[0]);
                         if (targetPlayer == null)
                         {
-                            TSafe.Instance.SendCommandReply(caller, "error_player_not_found");
+                            TSafe.Instance.SendCommandReply(caller, "error_player_not_found", TSafe.Instance.Config.General.MessageIcon);
                             return;
                         }
 
@@ -52,11 +52,11 @@ namespace Tavstal.TSafe.Commands
                     List<Vault>? vaults = await TSafe.DatabaseManager.Vaults.GetAsync(queryParameters: QueryParameter.eq("OwnerId", targetId));
                     if (vaults == null || vaults.Count == 0)
                     {
-                        TSafe.Instance.SendCommandReply(caller, "error_vault_not_found", args[0]);
+                        TSafe.Instance.SendCommandReply(caller, "error_vault_not_found", TSafe.Instance.Config.General.MessageIcon, args[0]);
                         return;
                     } 
                     await VaultManager.OpenVaultAsync(callerPlayer, vaults[0].Id);
-                    TSafe.Instance.SendCommandReply(caller, "success_command_safe_open");
+                    TSafe.Instance.SendCommandReply(caller, "success_command_safe_open", TSafe.Instance.Config.General.MessageIcon);
                 }),
             new SubCommand("clear", "Clears a specific player's storage or all of a specific item", "clear [player]", new List<string> { "empty" }, new List<string> { "tsafe.command.safeadmin.clear" }, 
                 Plugin, AllowedCaller,
@@ -73,7 +73,7 @@ namespace Tavstal.TSafe.Commands
                         UnturnedPlayer targetPlayer = UnturnedPlayer.FromName(args[0]);
                         if (targetPlayer == null)
                         {
-                            TSafe.Instance.SendCommandReply(caller, "error_player_not_found");
+                            TSafe.Instance.SendCommandReply(caller, "error_player_not_found", TSafe.Instance.Config.General.MessageIcon);
                             return;
                         }
 
@@ -83,7 +83,7 @@ namespace Tavstal.TSafe.Commands
                     List<Vault>? vaults = await TSafe.DatabaseManager.Vaults.GetAsync(queryParameters: QueryParameter.eq("OwnerId", targetId));
                     if (vaults == null || vaults.Count == 0)
                     {
-                        TSafe.Instance.SendCommandReply(caller, "error_vault_not_found", args[0]);
+                        TSafe.Instance.SendCommandReply(caller, "error_vault_not_found", TSafe.Instance.Config.General.MessageIcon, args[0]);
                         return;
                     }
 
@@ -91,7 +91,7 @@ namespace Tavstal.TSafe.Commands
                     await TSafe.DatabaseManager.Items.DeleteRangeAsync("VaultId", new List<object> { vault.Id });
                     
                     VaultManager.DestroyVaultNoQueue(vault.Id);
-                    TSafe.Instance.SendCommandReply(caller, "success_command_safeadmin_clear");
+                    TSafe.Instance.SendCommandReply(caller, "success_command_safeadmin_clear", TSafe.Instance.Config.General.MessageIcon);
                 }),
             new SubCommand("clearall", "Clears every unit of a specific item from all virtual storage.", "clearall", new List<string> { "emptyall" }, new List<string> { "tsafe.command.safeadmin.clearall" }, 
                 Plugin, AllowedCaller,
@@ -109,7 +109,7 @@ namespace Tavstal.TSafe.Commands
                         await TSafe.DatabaseManager.Items.DeleteRangeAsync("Id", new List<object> { vault.Id });
                         VaultManager.DestroyVaultNoQueue(vault.Id);
                     }
-                    TSafe.Instance.SendCommandReply(caller, "success_command_safeadmin_clearall");
+                    TSafe.Instance.SendCommandReply(caller, "success_command_safeadmin_clearall", TSafe.Instance.Config.General.MessageIcon);
                 }),
         };
         
