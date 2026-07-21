@@ -181,7 +181,7 @@ namespace Tavstal.TSafe
         public override Dictionary<string, string> DefaultLocalization =>
            new Dictionary<string, string>
            {
-               { "prefix", $"&e[{GetPluginName()}]" },
+               { "prefix", $"&e[{GetPluginName()}] " },
                { "error_player_not_found", "&cPlayer was not found." },
                { "error_vault_not_found", "&e{0}&c has no vault." },
                { "error_invalid_item", "&cInvalid item id." },
