@@ -7,6 +7,7 @@ using Tavstal.TLibrary.Models.Commands;
 using Tavstal.TLibrary.Models.Database;
 using Tavstal.TLibrary.Models.Plugin;
 using Tavstal.TSafe.Models;
+using Tavstal.TSafe.Utils.Helpers;
 using Tavstal.TSafe.Utils.Managers;
 // ReSharper disable UnusedType.Global
 
@@ -41,23 +42,10 @@ namespace Tavstal.TSafe.Commands
                         return;
                     }
                     
-                    byte x = TSafe.Instance.Config.DefaultRowX;
-                    byte y = TSafe.Instance.Config.DefaultRowY;
-                    var localGroups = TSafe.Instance.Config.Groups;
-                    localGroups.Reverse();
-                        
-                    foreach (Group group in localGroups)
-                    {
-                        if (callerPlayer.HasPermission(group.Permission))
-                        {
-                            x = group.SizeX;
-                            y = group.SizeY;
-                            break;
-                        }
-                    }
+                    var vaultSize = VaultHelper.GetVaultSize(callerPlayer);
 
                     string guid = Guid.NewGuid().ToString();
-                    await TSafe.DatabaseManager.Vaults.AddAsync(new Vault(guid, callerPlayer.CharacterName, callerPlayer.CSteamID.m_SteamID, x, y));
+                    await TSafe.DatabaseManager.Vaults.AddAsync(new Vault(guid, callerPlayer.CharacterName, callerPlayer.CSteamID.m_SteamID, vaultSize.x, vaultSize.y));
                     await VaultManager.OpenVaultAsync(callerPlayer, guid);
                     TSafe.Instance.SendCommandReply(caller, "success_command_safe_open", TSafe.Instance.Config.General.MessageIcon);
                 }),
