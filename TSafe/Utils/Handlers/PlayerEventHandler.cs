@@ -50,7 +50,7 @@ namespace Tavstal.TSafe.Utils.Handlers
         /// <param name="player">The player who has connected.</param>
         private static void OnPlayerConnected(UnturnedPlayer player)
         {
-            if (TSafe.IsConnectionAuthFailed)
+            if (TSafe.DatabaseManager.IsAuthenticationFailed)
                 return;
             
             BackgroundThreadDispatcher.RunAsync(async () =>
@@ -79,7 +79,7 @@ namespace Tavstal.TSafe.Utils.Handlers
         /// <param name="player">The player who has disconnected.</param>
         private static void OnPlayerDisconnected(UnturnedPlayer player)
         {
-            if (TSafe.IsConnectionAuthFailed)
+            if (TSafe.DatabaseManager.IsAuthenticationFailed)
                 return;
             
             BackgroundThreadDispatcher.RunAsync(async () =>

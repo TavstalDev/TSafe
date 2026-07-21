@@ -20,7 +20,6 @@ namespace Tavstal.TSafe
         public static TSafe Instance { get; private set; } = null!;
         internal static bool IsShuttingDown { get; set; }
         public static DatabaseManager DatabaseManager { get; private set; } = null!;
-        public static bool IsConnectionAuthFailed { get; set; }
 
         private readonly SemaphoreSlim _updateLock = new SemaphoreSlim(1, 1);
         private int _time;
@@ -70,7 +69,7 @@ namespace Tavstal.TSafe
             PlayerEventHandler.AttachEvents();
 
             DatabaseManager = new DatabaseManager(this, Config);
-            if (IsConnectionAuthFailed)
+            if (DatabaseManager.IsAuthenticationFailed)
                 return;
 
             Logger.Info($"# {GetPluginName()} has been loaded.");
@@ -88,7 +87,7 @@ namespace Tavstal.TSafe
 
             try
             {
-                if (IsConnectionAuthFailed || IsShuttingDown)
+                if (DatabaseManager.IsAuthenticationFailed || IsShuttingDown)
                     return;
                 BackgroundThreadDispatcher.RunAsync(async () => await BackupAsync());
             }
@@ -100,16 +99,15 @@ namespace Tavstal.TSafe
 
         private void OnPluginsLoaded(int i)
         {
-            if (IsConnectionAuthFailed)
-            {
-                Logger.Warning($"# Unloading {GetPluginName()} due to database authentication error.");
-                this.UnloadPlugin();
-            }
+            if (!DatabaseManager.IsAuthenticationFailed)
+                return;
+            Logger.Warning($"# Unloading {GetPluginName()} due to database authentication error.");
+            this.UnloadPlugin();
         }
-        
+
         private void OnShutdown()
         {
-            if (IsConnectionAuthFailed || IsShuttingDown)
+            if (DatabaseManager.IsAuthenticationFailed || IsShuttingDown)
                 return;
             IsShuttingDown = true;
             BackgroundThreadDispatcher.RunAsync(async () => await BackupAsync());
@@ -117,22 +115,33 @@ namespace Tavstal.TSafe
 
         private void FixedUpdate()
         {
-            if (IsConnectionAuthFailed)
-                return;
-            
-            _time++;
-            // Every second
-            if (_time % 3000 != 0)
-                return;
-            
-            VaultManager.Update();
-            
-            // (Default SaveInterval is 300)
-            // Executes the code every 300 seconds (5 minutes)
-            if (_time % (Config.Database.SaveInterval * 50) != 0)
-                return;
-            
-            BackgroundThreadDispatcher.RunAsync(async () => await BackupAsync());
+            try
+            {
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+                if (DatabaseManager == null)
+                    return;
+
+                if (DatabaseManager.IsAuthenticationFailed)
+                    return;
+
+                _time++;
+                // Every second
+                if (_time % 3000 != 0)
+                    return;
+
+                VaultManager.Update();
+
+                // (Default SaveInterval is 300)
+                // Executes the code every 300 seconds (5 minutes)
+                if (_time % (Config.Database.SaveInterval * 50) != 0)
+                    return;
+
+                BackgroundThreadDispatcher.RunAsync(async () => await BackupAsync());
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("An unexpected error occured in FixedUpdate.", ex);
+            }
         }
 
         private async Task BackupAsync()
@@ -153,8 +162,10 @@ namespace Tavstal.TSafe
 
                 var ids = new List<object>();
                 ids.AddRange(vaultIds);
-                await DatabaseManager.Items.DeleteRangeAsync("VaultId", ids);
-                await DatabaseManager.Items.AddRangeAsync(vaultItems);
+                if (ids.Count > 0)
+                    await DatabaseManager.Items.DeleteRangeAsync("VaultId", ids);
+                if (vaultItems.Count > 0)
+                    await DatabaseManager.Items.AddRangeAsync(vaultItems);
                 await MainThreadDispatcher.RunAsync(() =>
                 {
                     foreach (var vaultId in vaultIds)
