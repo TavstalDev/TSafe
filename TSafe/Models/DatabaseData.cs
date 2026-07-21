@@ -1,9 +1,9 @@
-﻿using Tavstal.TLibrary.Models.Database;
+﻿using Tavstal.TLibrary.Models.Config;
 using YamlDotNet.Serialization;
 
 namespace Tavstal.TSafe.Models
 {
-    public class DatabaseData : DatabaseSettingsBase
+    public class DatabaseData : DatabaseConfigBase
     {
         // Note: It starts from 7 because there are 6 defined property in the base class
         [YamlMember(Order = 7)]

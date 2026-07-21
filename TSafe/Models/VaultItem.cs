@@ -8,7 +8,7 @@ namespace Tavstal.TSafe.Models
     public class VaultItem
     {
         [YamlMember(Order = 0)]
-        [SqlMember(columnType: "varchar(36)")]
+        [SqlMember(columnType: "varchar(36)", isPrimaryKey: true)]
         public string Id { get; set; }
         
         [YamlMember(Order = 1)]

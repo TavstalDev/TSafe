@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
 using Tavstal.TLibrary.Models.Config;
-using Tavstal.TLibrary.Models.Logging;
 using Tavstal.TSafe.Models;
 using YamlDotNet.Serialization;
+// ReSharper disable ClassNeverInstantiated.Global
 
 namespace Tavstal.TSafe
 {
-    // ReSharper disable once InconsistentNaming
     public class TSafeConfig : YamlConfiguration
     {
         [YamlMember(Order = 3)]
@@ -20,9 +19,10 @@ namespace Tavstal.TSafe
 
         public override void LoadDefaults()
         {
-            Locale = "en";
-            LogLevel = ELogLevel.INFO;
-            DownloadLocalePacks = true;
+            General = new GeneralConfig
+            {
+                MessageIcon = "https://raw.githubusercontent.com/TavstalDev/TSafe/refs/heads/master/assets/icon.png"
+            };
             Database = new DatabaseData("tsafe_", 300);
             DefaultRowX = 5;
             DefaultRowY = 5;

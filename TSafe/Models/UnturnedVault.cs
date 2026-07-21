@@ -4,11 +4,14 @@ namespace Tavstal.TSafe.Models
 {
     public class UnturnedVault
     {
-        public readonly BarricadeDrop StorageDrop;
-        public readonly int SizeX;
-        public readonly int SizeY;
+        public BarricadeDrop StorageDrop { get; set; }
+        public int SizeX { get; set; }
+        public int SizeY { get; set; }
 
-        public UnturnedVault() { }
+        public UnturnedVault()
+        {
+            StorageDrop = null!;
+        }
         
         public UnturnedVault(BarricadeDrop storageDrop, int sizeX, int sizeY)
         {
