@@ -53,22 +53,25 @@ namespace Tavstal.TSafe.Utils.Handlers
             if (TSafe.DatabaseManager.IsAuthenticationFailed)
                 return;
             
+            var steamIdString = player.CSteamID.m_SteamID.ToString();
+            var steamId = player.CSteamID;
+            
             BackgroundThreadDispatcher.RunAsync(async () =>
             {
-                var playerLock = _playerLocks.GetOrAdd(player.CSteamID.m_SteamID.ToString(), new SemaphoreSlim(1, 1));
+                var playerLock = _playerLocks.GetOrAdd(steamIdString, new SemaphoreSlim(1, 1));
                 await playerLock.WaitAsync();
                 try
                 {
                     var vaults = await TSafe.DatabaseManager.Vaults.GetAsync(queryParameters:
-                        QueryParameter.eq("OwnerId", player.CSteamID.m_SteamID));
+                        QueryParameter.eq("OwnerId", steamId.m_SteamID));
                     if (vaults == null || vaults.Count == 0)
                         return;
                     vaults.ForEach(x => VaultManager.CancelVaultDestroy(x.Id));
                 }
                 finally
                 {
-                    _playerLocks.TryRemove(player.CSteamID.m_SteamID.ToString(), out _);
                     playerLock.Release();
+                    _playerLocks.TryRemove(steamIdString, out _);
                 }
             });
         }
@@ -82,22 +85,25 @@ namespace Tavstal.TSafe.Utils.Handlers
             if (TSafe.DatabaseManager.IsAuthenticationFailed)
                 return;
             
+            var steamIdString = player.CSteamID.m_SteamID.ToString();
+            var steamId = player.CSteamID;
+            
             BackgroundThreadDispatcher.RunAsync(async () =>
             {
-                var playerLock = _playerLocks.GetOrAdd(player.CSteamID.m_SteamID.ToString(), new SemaphoreSlim(1, 1));
+                var playerLock = _playerLocks.GetOrAdd(steamIdString, new SemaphoreSlim(1, 1));
                 await playerLock.WaitAsync();
                 try
                 {
                     var vaults = await TSafe.DatabaseManager.Vaults.GetAsync(queryParameters:
-                        QueryParameter.eq("OwnerId", player.CSteamID.m_SteamID));
+                        QueryParameter.eq("OwnerId", steamId.m_SteamID));
                     if (vaults == null || vaults.Count == 0)
                         return;
                     vaults.ForEach(x => VaultManager.RequestVaultDestroy(x.Id));
                 }
                 finally
                 {
-                    _playerLocks.TryRemove(player.CSteamID.m_SteamID.ToString(), out _);
                     playerLock.Release();
+                    _playerLocks.TryRemove(steamIdString, out _);
                 }
             });
         }

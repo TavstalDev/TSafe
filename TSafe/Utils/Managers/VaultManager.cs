@@ -208,7 +208,9 @@ namespace Tavstal.TSafe.Utils.Managers
                     continue;
                 
                 toRemove.Add(elem.Key);
-                UnturnedVault vault = _vaultList[elem.Key];
+                if (!_vaultList.TryGetValue(elem.Key, out UnturnedVault? vault))
+                    continue;
+                
                 InteractableStorage storage = (InteractableStorage)vault.StorageDrop.interactable;
                 vaultIds.Add(elem.Key);
                 foreach (var item in storage.items.items)
